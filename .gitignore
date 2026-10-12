@@ -1,0 +1,9 @@
+bin/
+obj/
+.tools/
+.packages/
+artifacts/
+.vs/
+*.user
+tools/PresentMon/*.exe
+tools/PresentMon/*.download

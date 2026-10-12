@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/XWhat.App/XWhat.App.csproj" />
+    <Project Path="src/XWhat.Core/XWhat.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/XWhat.Core.Tests/XWhat.Core.Tests.csproj" />
+  </Folder>
+</Solution>
