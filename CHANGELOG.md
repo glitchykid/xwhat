@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.1 — 2026-10-12
+
+- Minimal technical tray menu with short actions, current overlay state and a monochrome telemetry icon.
+- Compact 370 × 390 settings panel: dark square controls, Consolas, 23-pixel rows, paired sampling/history fields and live scale/opacity values.
+- Help and sensor diagnostics collapse into one section; all existing settings remain available.
+- UI regression checks cover editable process input, threshold validation, tray actions/state and visibility of every menu item.
+- Preview export preserves the real settings dimensions and includes the native tray menu.
+
 ## 0.2.0 — 2026-10-12
 
 - Transparent technical HUD, 316 × 144: numeric rows on the left and frame/load graphs on the right; no panel border, logo, game title or large FPS heading.

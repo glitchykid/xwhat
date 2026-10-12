@@ -8,4 +8,6 @@ try {
     $previewProcess.WaitForExit()
     if ($previewProcess.ExitCode -ne 0) { throw 'Preview failed' }
     Write-Output $image
+    Write-Output ([IO.Path]::ChangeExtension($image, '.settings.png'))
+    Write-Output ([IO.Path]::ChangeExtension($image, '.tray.png'))
 } finally { Pop-Location }

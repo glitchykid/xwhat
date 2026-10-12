@@ -20,6 +20,8 @@ public partial class App : Application
     private OverlayWindow? _overlay;
     private SettingsWindow? _settingsWindow;
     private Forms.NotifyIcon? _tray;
+    private TrayMenu? _trayMenu;
+    private System.Drawing.Icon? _trayIcon;
     private readonly RtssOutput _rtss = new();
     private readonly ForegroundDisplay _display = new();
     private readonly AutostartService _startup = new(Path.Combine(AppContext.BaseDirectory, "XWhat.exe"));
@@ -59,18 +61,15 @@ public partial class App : Application
 
     private void CreateTray()
     {
-        var menu = new Forms.ContextMenuStrip();
-        menu.Items.Add("Настройки…", null, (_, _) => Dispatcher.Invoke(ShowSettings));
-        menu.Items.Add("Показать / скрыть · Ctrl+Shift+F10", null, (_, _) => Dispatcher.Invoke(ToggleOverlay));
-        menu.Items.Add("Папка настроек и журнала", null, (_, _) =>
+        _trayMenu = new TrayMenu(() => Dispatcher.Invoke(ShowSettings), () => Dispatcher.Invoke(ToggleOverlay), () =>
         {
             Directory.CreateDirectory(_store.DirectoryPath);
             Process.Start(new ProcessStartInfo("explorer.exe") { ArgumentList = { _store.DirectoryPath }, UseShellExecute = true });
-        });
-        menu.Items.Add(new Forms.ToolStripSeparator());
-        menu.Items.Add("Выход", null, async (_, _) => await Dispatcher.InvokeAsync(QuitAsync).Task.Unwrap());
-        _tray = new Forms.NotifyIcon { Icon = (System.Drawing.Icon)System.Drawing.SystemIcons.Information.Clone(),
-            Text = "X What · настройки", ContextMenuStrip = menu, Visible = true };
+        }, async () => await Dispatcher.InvokeAsync(QuitAsync).Task.Unwrap());
+        _trayMenu.Opening += (_, _) => _trayMenu.SetOverlayVisible(_settings.ShowOverlay);
+        _trayIcon = TrayIcon.Create();
+        _tray = new Forms.NotifyIcon { Icon = _trayIcon,
+            Text = "X What · настройки", ContextMenuStrip = _trayMenu, Visible = true };
         _tray.DoubleClick += (_, _) => Dispatcher.Invoke(ShowSettings);
     }
 
@@ -162,12 +161,20 @@ public partial class App : Application
         settings.UpdateLayout();
         SavePng((FrameworkElement)settings.Content, Path.ChangeExtension(path, ".settings.png"));
         settings.Close();
+        _trayMenu!.CreateControl();
+        _trayMenu.PerformLayout();
+        using (var menuImage = new System.Drawing.Bitmap(_trayMenu.Width, _trayMenu.Height))
+        {
+            _trayMenu.DrawToBitmap(menuImage, new System.Drawing.Rectangle(System.Drawing.Point.Empty, menuImage.Size));
+            menuImage.Save(Path.ChangeExtension(path, ".tray.png"), System.Drawing.Imaging.ImageFormat.Png);
+        }
         await QuitAsync();
     }
     private static void SavePng(FrameworkElement element, string path)
     {
-        element.Measure(new Size(element.ActualWidth > 0 ? element.ActualWidth : HudRows.Width, element.ActualHeight > 0 ? element.ActualHeight : HudRows.Height));
-        element.Arrange(new Rect(new Size(element.DesiredSize.Width, element.DesiredSize.Height)));
+        var size = new Size(element.ActualWidth > 0 ? element.ActualWidth : HudRows.Width, element.ActualHeight > 0 ? element.ActualHeight : HudRows.Height);
+        element.Measure(size);
+        element.Arrange(new Rect(size));
         var bitmap = new RenderTargetBitmap((int)Math.Ceiling(element.ActualWidth), (int)Math.Ceiling(element.ActualHeight), 96, 96, PixelFormats.Pbgra32);
         bitmap.Render(element);
         var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
@@ -189,6 +196,8 @@ public partial class App : Application
         if (_quitting) return;
         _quitting = true; _timer?.Stop();
         _tray?.Dispose(); _tray = null;
+        _trayMenu?.Dispose(); _trayMenu = null;
+        _trayIcon?.Dispose(); _trayIcon = null;
         _rtss.Dispose();
         if (_engine != null) await _engine.DisposeAsync();
         _settingsWindow?.Close(); _overlay?.Close(); _instance?.Dispose();

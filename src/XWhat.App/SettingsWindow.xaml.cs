@@ -22,12 +22,13 @@ public partial class SettingsWindow : Window
         ScaleSlider.Value = settings.Scale; OpacitySlider.Value = settings.BackgroundOpacity;
         ProcessBox.Text = settings.ProcessName;
         GpuBox.ItemsSource = new[] { new DeviceChoice("", "Авто · наибольшая VRAM") }.Concat(gpus).ToArray();
-        DiskBox.ItemsSource = new[] { new DeviceChoice("", "Все диски · суммарная активность") }.Concat(disks).ToArray();
+        DiskBox.ItemsSource = new[] { new DeviceChoice("", "Все диски") }.Concat(disks).ToArray();
         GpuBox.SelectedValue = settings.GpuId; DiskBox.SelectedValue = settings.DiskId;
         IntervalBox.ItemsSource = new[] { 250, 500, 1000, 2000 }; IntervalBox.SelectedItem = settings.SampleIntervalMs;
         HistoryBox.ItemsSource = new[] { 5, 10, 30, 60 }; HistoryBox.SelectedItem = settings.HistorySeconds;
         ThresholdBox.Text = settings.StutterThresholdMs.ToString("0.#", CultureInfo.CurrentCulture);
         StatusText.Text = status;
+        UpdateSummary();
     }
     private void Apply_Click(object sender, RoutedEventArgs e)
     {
@@ -42,7 +43,7 @@ public partial class SettingsWindow : Window
             GpuId = GpuBox.SelectedValue as string ?? "", DiskId = DiskBox.SelectedValue as string ?? "",
             SampleIntervalMs = IntervalBox.SelectedItem as int? ?? 500, HistorySeconds = HistoryBox.SelectedItem as int? ?? 10, StutterThresholdMs = threshold
         }).Normalize();
-        try { _apply(updated); _settings = updated; ErrorText.Text = "Сохранено"; }
+        try { _apply(updated); _settings = updated; ErrorText.Text = ""; UpdateSummary(); SummaryText.Text = "Сохранено"; }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException or ArgumentException) { ErrorText.Text = $"Настройки не сохранены: {ex.Message}"; }
     }
     private void Processes_Click(object sender, RoutedEventArgs e)
@@ -62,8 +63,9 @@ public partial class SettingsWindow : Window
     public void UpdateDevices(DeviceChoice[] gpus, DeviceChoice[] disks)
     {
         UpdateChoices(GpuBox, gpus, "Авто · наибольшая VRAM");
-        UpdateChoices(DiskBox, disks, "Все диски · суммарная активность");
+        UpdateChoices(DiskBox, disks, "Все диски");
     }
+    private void UpdateSummary() => SummaryText.Text = $"{(_settings.Mode == OverlayMode.Auto ? "Авто" : _settings.Mode == OverlayMode.Rtss ? "RTSS" : "Windows")} · {_settings.SampleIntervalMs} ms";
     private static void UpdateChoices(System.Windows.Controls.ComboBox box, DeviceChoice[] choices, string defaultName)
     {
         var items = new[] { new DeviceChoice("", defaultName) }.Concat(choices).ToArray();

@@ -1,44 +1,62 @@
 <Window x:Class="XWhat.App.SettingsWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
- Title="X What · Настройки" Width="465" Height="710" MinWidth="430" MinHeight="530" Background="#0E141E" Foreground="#EFF5FC" WindowStartupLocation="CenterScreen">
- <Grid Margin="24" Background="#0E141E">
-  <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
-  <StackPanel Margin="0,0,0,16">
-   <TextBlock Text="X / WHAT" Foreground="#6FE7CF" FontSize="24" FontWeight="SemiBold" />
-   <TextBlock Text="Мониторинг · настройки" Foreground="#A4B3C8" Margin="0,4,0,0" FontSize="12" />
-  </StackPanel>
-  <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-   <StackPanel Margin="0,0,9,12">
-    <TextBlock Text="ВЫВОД" Foreground="#6FE7CF" FontSize="10" Margin="0,0,0,6" />
-    <ComboBox x:Name="ModeBox"><ComboBoxItem Content="Авто · определять полный экран" /><ComboBoxItem Content="Окно Windows · без рамки / рабочий стол" /><ComboBoxItem Content="RTSS · эксклюзивный полный экран" /></ComboBox>
-    <TextBlock Text="Для полного экрана установите и запустите RTSS. Положение, масштаб и обводка этого вывода задаются в RTSS." TextWrapping="Wrap" Foreground="#A4B3C8" FontSize="11" Margin="0,6,0,3" />
-    <TextBlock Margin="0,2,0,12"><Hyperlink Click="RtssLink_Click" Foreground="#6FE7CF">Страница загрузки RTSS</Hyperlink></TextBlock>
-    <CheckBox x:Name="VisibleBox" Content="Показывать оверлей · Ctrl + Shift + F10" />
-    <CheckBox x:Name="GraphsBox" Content="Графики кадров и нагрузки" />
-    <CheckBox x:Name="ClickThroughBox" Content="Пропускать клики в игру (окно Windows)" />
-    <CheckBox x:Name="AutostartBox" Content="Запускать при входе в Windows" />
-    <TextBlock Text="Автозапуск работает в фоне, без окна настроек и запроса UAC. Включайте его после перемещения приложения в постоянную папку." TextWrapping="Wrap" Foreground="#A4B3C8" FontSize="11" Margin="0,4,0,0" />
-    <TextBlock Text="ИГРА И ДАТЧИКИ" Foreground="#6FE7CF" FontSize="10" Margin="0,16,0,7" />
-    <TextBlock Text="Процесс игры (.exe); пусто = активное окно" FontSize="12" Margin="0,0,0,5" />
-    <DockPanel><Button Content="Список" DockPanel.Dock="Right" Margin="7,0,0,0" Click="Processes_Click" /><ComboBox x:Name="ProcessBox" IsEditable="True" /></DockPanel>
-    <TextBlock Text="Видеокарта" FontSize="12" Margin="0,8,0,5" />
-    <ComboBox x:Name="GpuBox" DisplayMemberPath="Name" SelectedValuePath="Id" />
-    <TextBlock Text="Диск" FontSize="12" Margin="0,8,0,5" />
-    <ComboBox x:Name="DiskBox" DisplayMemberPath="Name" SelectedValuePath="Id" />
-    <TextBlock Text="I/O latency — средняя задержка всех дисков; для отдельного диска выводится «—». Температура RAM/VRAM зависит от доступных датчиков." TextWrapping="Wrap" Foreground="#A4B3C8" FontSize="11" Margin="0,5,0,0" />
-    <TextBlock Text="ГРАФИКИ" Foreground="#6FE7CF" FontSize="10" Margin="0,16,0,7" />
-    <UniformGrid Columns="2"><StackPanel Margin="0,0,8,0"><TextBlock Text="Опрос датчиков" FontSize="12" Margin="0,0,0,5" /><ComboBox x:Name="IntervalBox" /></StackPanel><StackPanel><TextBlock Text="История" FontSize="12" Margin="0,0,0,5" /><ComboBox x:Name="HistoryBox" /></StackPanel></UniformGrid>
-    <DockPanel Margin="0,10,0,0"><TextBlock Text="Порог пика, ms" VerticalAlignment="Center" /><TextBox x:Name="ThresholdBox" Width="75" HorizontalAlignment="Right" /></DockPanel>
-    <TextBlock Text="Пик: кадр выше порога и вдвое длиннее медианы. Причину ищите по совпадению с графиками нагрузки." TextWrapping="Wrap" Foreground="#A4B3C8" FontSize="11" Margin="0,5,0,0" />
-    <TextBlock Text="ОКНО WINDOWS" Foreground="#6FE7CF" FontSize="10" Margin="0,16,0,7" />
-    <ComboBox x:Name="CornerBox"><ComboBoxItem Content="Слева сверху" /><ComboBoxItem Content="Справа сверху" /><ComboBoxItem Content="Слева снизу" /><ComboBoxItem Content="Справа снизу" /></ComboBox>
-    <TextBlock Text="Масштаб · 75–200%" FontSize="12" Margin="0,9,0,0" /><Slider x:Name="ScaleSlider" Minimum="0.75" Maximum="2" TickFrequency="0.05" IsSnapToTickEnabled="True" Margin="0,5" />
-    <TextBlock Text="Непрозрачность фона · данные всегда контрастные" FontSize="12" Margin="0,5,0,0" /><Slider x:Name="OpacitySlider" Minimum="0" Maximum="0.9" TickFrequency="0.05" IsSnapToTickEnabled="True" Margin="0,5" />
-    <TextBlock Text="ДОСТУПНОСТЬ" Foreground="#6FE7CF" FontSize="10" Margin="0,16,0,7" />
-    <TextBlock x:Name="StatusText" TextWrapping="Wrap" Foreground="#A4B3C8" FontSize="11" />
-    <TextBlock Text="Для CPU-температур LibreHardwareMonitor может требовать драйвер PawnIO и права администратора. Недоступные значения обозначены «—»." TextWrapping="Wrap" Foreground="#A4B3C8" FontSize="11" Margin="0,7,0,0" />
-    <TextBlock Margin="0,6,0,0"><Hyperlink Click="PawnIoLink_Click" Foreground="#6FE7CF">Официальный PawnIO</Hyperlink></TextBlock>
-   </StackPanel>
-  </ScrollViewer>
-  <StackPanel Grid.Row="2" Margin="0,12,0,0"><TextBlock x:Name="ErrorText" Foreground="#FF728B" TextWrapping="Wrap" Margin="0,0,0,7" /><DockPanel><Button Content="Применить" Click="Apply_Click" Background="#6FE7CF" Foreground="#101821" /><Button Content="Закрыть" Click="Close_Click" /><TextBlock x:Name="VersionText" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="#72839B" /></DockPanel></StackPanel>
- </Grid>
+ Title="X What · Настройки" Width="370" Height="390" MinWidth="370" MinHeight="390" WindowStyle="None" ResizeMode="CanResize" WindowStartupLocation="CenterScreen"
+ Background="{StaticResource Surface}" Foreground="{StaticResource Ink}" FontFamily="Consolas" FontSize="12" TextOptions.TextFormattingMode="Display" TextOptions.TextRenderingMode="ClearType">
+ <WindowChrome.WindowChrome><WindowChrome CaptionHeight="26" ResizeBorderThickness="4" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False" /></WindowChrome.WindowChrome>
+ <Border BorderBrush="{StaticResource Edge}" BorderThickness="1" Background="{StaticResource Surface}">
+  <Grid>
+   <Grid.RowDefinitions><RowDefinition Height="26" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+   <Border BorderBrush="{StaticResource Edge}" BorderThickness="0,0,0,1">
+    <Grid Margin="8,0,3,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="26" /></Grid.ColumnDefinitions>
+     <TextBlock Text="XWHAT / CONFIG" FontSize="11" Foreground="{StaticResource Muted}" />
+     <TextBlock x:Name="VersionText" Grid.Column="1" FontSize="11" Margin="0,0,6,0" Foreground="{StaticResource Muted}" />
+     <Button Grid.Column="2" Content="×" Click="Close_Click" ToolTip="Закрыть" AutomationProperties.Name="Закрыть настройки" Padding="0" MinHeight="0" Background="Transparent" BorderThickness="0" WindowChrome.IsHitTestVisibleInChrome="True" />
+    </Grid>
+   </Border>
+   <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="8,6,8,0">
+    <StackPanel>
+     <Grid Height="23"><Grid.ColumnDefinitions><ColumnDefinition Width="78" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+      <TextBlock Text="Вывод" Style="{StaticResource FieldLabel}" /><ComboBox x:Name="ModeBox" Grid.Column="1" AutomationProperties.Name="Режим вывода"><ComboBoxItem Content="Авто" /><ComboBoxItem Content="Windows" /><ComboBoxItem Content="RTSS" /></ComboBox>
+     </Grid>
+     <UniformGrid Columns="2" Margin="0,2,0,0">
+      <CheckBox x:Name="VisibleBox" Content="Оверлей" ToolTip="Показать оверлей · Ctrl+Shift+F10" /><CheckBox x:Name="GraphsBox" Content="Графики" />
+      <CheckBox x:Name="ClickThroughBox" Content="Клики в игру" ToolTip="Пропускать клики через оверлей Windows" /><CheckBox x:Name="AutostartBox" Content="Автозапуск" ToolTip="Запускать в фоне при входе в Windows" />
+     </UniformGrid>
+     <Border Height="1" Background="{StaticResource Edge}" Margin="0,5" />
+     <Grid Height="23"><Grid.ColumnDefinitions><ColumnDefinition Width="78" /><ColumnDefinition Width="*" /><ColumnDefinition Width="51" /></Grid.ColumnDefinitions>
+      <TextBlock Text="Игра" Style="{StaticResource FieldLabel}" />
+      <Grid Grid.Column="1"><ComboBox x:Name="ProcessBox" IsEditable="True" AutomationProperties.Name="Процесс игры" ToolTip="Процесс .exe; пусто = активное окно" />
+       <TextBlock Text="Активное окно" Foreground="{StaticResource Muted}" Margin="6,0,24,0" IsHitTestVisible="False"><TextBlock.Style><Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding Text, ElementName=ProcessBox}" Value=""><Setter Property="Visibility" Value="Visible" /></DataTrigger><DataTrigger Binding="{Binding IsKeyboardFocusWithin, ElementName=ProcessBox}" Value="True"><Setter Property="Visibility" Value="Collapsed" /></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
+      </Grid>
+      <Button Grid.Column="2" Content="Список" Margin="3,0,0,0" Padding="3,1" Click="Processes_Click" ToolTip="Выбрать запущенную игру" />
+     </Grid>
+     <Grid Height="23" Margin="0,3,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="78" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><TextBlock Text="GPU" Style="{StaticResource FieldLabel}" /><ComboBox x:Name="GpuBox" Grid.Column="1" DisplayMemberPath="Name" SelectedValuePath="Id" AutomationProperties.Name="Видеокарта" /></Grid>
+     <Grid Height="23" Margin="0,3,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="78" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><TextBlock Text="Диск" Style="{StaticResource FieldLabel}" /><ComboBox x:Name="DiskBox" Grid.Column="1" DisplayMemberPath="Name" SelectedValuePath="Id" AutomationProperties.Name="Диск" /></Grid>
+     <Border Height="1" Background="{StaticResource Edge}" Margin="0,5" />
+     <Grid Height="23"><Grid.ColumnDefinitions><ColumnDefinition Width="78" /><ColumnDefinition Width="*" /><ColumnDefinition Width="80" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><TextBlock Text="Опрос,ms" Style="{StaticResource FieldLabel}" /><ComboBox x:Name="IntervalBox" Grid.Column="1" AutomationProperties.Name="Опрос датчиков, миллисекунды" /><TextBlock Grid.Column="2" Text="История,s" Margin="8,0,0,0" Style="{StaticResource FieldLabel}" /><ComboBox x:Name="HistoryBox" Grid.Column="3" AutomationProperties.Name="История, секунды" /></Grid>
+     <Grid Height="23" Margin="0,3,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="78" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><TextBlock Text="Пик,ms" Style="{StaticResource FieldLabel}" /><TextBox x:Name="ThresholdBox" Grid.Column="1" AutomationProperties.Name="Порог пика, миллисекунды" /></Grid>
+     <Border Height="1" Background="{StaticResource Edge}" Margin="0,5" />
+     <Grid Height="23"><Grid.ColumnDefinitions><ColumnDefinition Width="78" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><TextBlock Text="Угол" Style="{StaticResource FieldLabel}" /><ComboBox x:Name="CornerBox" Grid.Column="1" AutomationProperties.Name="Угол оверлея Windows"><ComboBoxItem Content="Слева сверху" /><ComboBoxItem Content="Справа сверху" /><ComboBoxItem Content="Слева снизу" /><ComboBoxItem Content="Справа снизу" /></ComboBox></Grid>
+     <Grid Height="23"><Grid.ColumnDefinitions><ColumnDefinition Width="78" /><ColumnDefinition Width="*" /><ColumnDefinition Width="44" /></Grid.ColumnDefinitions><TextBlock Text="Размер" Style="{StaticResource FieldLabel}" /><Slider x:Name="ScaleSlider" Grid.Column="1" Minimum="0.75" Maximum="2" TickFrequency="0.05" IsSnapToTickEnabled="True" AutomationProperties.Name="Масштаб оверлея Windows" /><TextBlock Grid.Column="2" Text="{Binding Value, ElementName=ScaleSlider, StringFormat={}{0:P0}}" HorizontalAlignment="Right" /></Grid>
+     <Grid Height="23"><Grid.ColumnDefinitions><ColumnDefinition Width="78" /><ColumnDefinition Width="*" /><ColumnDefinition Width="44" /></Grid.ColumnDefinitions><TextBlock Text="Фон" Style="{StaticResource FieldLabel}" /><Slider x:Name="OpacitySlider" Grid.Column="1" Minimum="0" Maximum="0.9" TickFrequency="0.05" IsSnapToTickEnabled="True" AutomationProperties.Name="Непрозрачность фона Windows" /><TextBlock Grid.Column="2" Text="{Binding Value, ElementName=OpacitySlider, StringFormat={}{0:P0}}" HorizontalAlignment="Right" /></Grid>
+     <Expander Header="Диагностика / помощь" FontSize="11">
+      <StackPanel>
+       <TextBlock x:Name="StatusText" TextWrapping="Wrap" Foreground="{StaticResource Muted}" FontSize="11" />
+       <TextBlock Text="Полный экран: запустите RTSS; положение и масштаб задаются в RTSS. Угол, размер и фон выше относятся к окну Windows." TextWrapping="Wrap" Foreground="{StaticResource Muted}" FontSize="11" Margin="0,6,0,0" />
+       <TextBlock Margin="0,3,0,0" FontSize="11"><Hyperlink Click="RtssLink_Click">Загрузить RTSS</Hyperlink></TextBlock>
+       <TextBlock Text="Автозапуск: распакуйте программу в постоянную папку до включения. Запуск в фоне без UAC; FPS требует доступ к ETW." TextWrapping="Wrap" Foreground="{StaticResource Muted}" FontSize="11" Margin="0,6,0,0" />
+       <TextBlock Text="Пик: кадр выше порога и двух медианных длительностей. I/O latency — средняя по всем дискам. Температуры RAM/VRAM зависят от датчиков." TextWrapping="Wrap" Foreground="{StaticResource Muted}" FontSize="11" Margin="0,6,0,0" />
+       <TextBlock Text="Температуры CPU могут требовать PawnIO и права администратора. Недоступные значения: —." TextWrapping="Wrap" Foreground="{StaticResource Muted}" FontSize="11" Margin="0,6,0,0" />
+       <TextBlock Margin="0,3,0,0" FontSize="11"><Hyperlink Click="PawnIoLink_Click">Официальный PawnIO</Hyperlink></TextBlock>
+      </StackPanel>
+     </Expander>
+    </StackPanel>
+   </ScrollViewer>
+   <Border Grid.Row="2" BorderBrush="{StaticResource Edge}" BorderThickness="0,1,0,0" Padding="8,5">
+    <StackPanel>
+     <TextBlock x:Name="ErrorText" Foreground="#FF8D88" FontSize="11" TextWrapping="Wrap"><TextBlock.Style><Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}"><Setter Property="Margin" Value="0,0,0,4" /><Style.Triggers><Trigger Property="Text" Value=""><Setter Property="Visibility" Value="Collapsed" /></Trigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
+     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><TextBlock x:Name="SummaryText" FontSize="11" Foreground="{StaticResource Muted}" /><Button Grid.Column="1" Content="Закрыть" Click="Close_Click" Margin="0,0,4,0" IsCancel="True" /><Button x:Name="ApplyButton" Grid.Column="2" Content="Применить" Click="Apply_Click" Background="{StaticResource Ink}" Foreground="{StaticResource Surface}" IsDefault="True" /></Grid>
+    </StackPanel>
+   </Border>
+  </Grid>
+ </Border>
 </Window>
