@@ -4,6 +4,7 @@
     <Project Path="src/XWhat.Core/XWhat.Core.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/XWhat.App.Tests/XWhat.App.Tests.csproj" />
     <Project Path="tests/XWhat.Core.Tests/XWhat.Core.Tests.csproj" />
   </Folder>
 </Solution>

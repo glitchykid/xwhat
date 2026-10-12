@@ -7,11 +7,33 @@ namespace XWhat.App.Services;
 internal sealed class RtssOutput : IDisposable
 {
     private readonly string _owner = $"XWhat.{Environment.ProcessId}";
+    private long _lastProbe = -1000;
+    private bool _available;
     public string Status { get; private set; } = "Запустите RTSS для полноэкранного вывода";
+
+    public bool IsAvailable
+    {
+        get
+        {
+            if (Environment.TickCount64 - _lastProbe < 1000) return _available;
+            _lastProbe = Environment.TickCount64;
+            try
+            {
+                using var file = MemoryMappedFile.OpenExisting("RTSSSharedMemoryV2", MemoryMappedFileRights.ReadWrite);
+                using var view = file.CreateViewAccessor(0, 40, MemoryMappedFileAccess.Read);
+                _available = view.ReadUInt32(0) == 0x52545353 && view.ReadUInt32(4) >= 0x0002000e;
+                Status = _available ? "RTSS доступен" : "Нужен RTSS с форматом памяти 2.14+";
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            { _available = false; Status = "RTSS недоступен · проверьте запуск и права"; }
+            return _available;
+        }
+    }
 
     public void Update(string text, RtssGraph[] graphs) => Access(memory =>
     {
-        RtssProtocol.TryWrite(memory, _owner, text, graphs, out var error);
+        _available = RtssProtocol.TryWrite(memory, _owner, text, graphs, out var error);
+        if (!_available) _lastProbe = Environment.TickCount64;
         Status = error;
     });
     public void Clear() => Access(memory => RtssProtocol.Clear(memory, _owner));
@@ -40,9 +62,9 @@ internal sealed class RtssOutput : IDisposable
             }
             finally { view.SafeMemoryMappedViewHandle.ReleasePointer(); }
         }
-        catch (FileNotFoundException) { Status = "RTSS не запущен · установите и запустите RTSS"; }
-        catch (UnauthorizedAccessException) { Status = "Нет доступа к RTSS · проверьте одинаковые права запуска"; }
-        catch (IOException) { Status = "RTSS перезапускается"; }
+        catch (FileNotFoundException) { _available = false; Status = "RTSS не запущен · установите и запустите RTSS"; }
+        catch (UnauthorizedAccessException) { _available = false; Status = "Нет доступа к RTSS · проверьте одинаковые права запуска"; }
+        catch (IOException) { _available = false; Status = "RTSS перезапускается"; }
     }
     public void Dispose() => Clear();
 }

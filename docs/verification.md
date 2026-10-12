@@ -1,6 +1,6 @@
 # Verification
 
-Automated: `scripts/Build.ps1` exercises history bounds, frame statistics/expiry, CSV quoting/versioned headers, settings normalization, peak-preserving graph reduction, RTSS signature/bounds/slot isolation/graph serialization and rejected-write atomicity.
+Automated: `scripts/Build.ps1` exercises history bounds, frame statistics/expiry, CSV quoting/versioned headers, settings normalization/migration, peak-preserving graph reduction, RTSS signature/bounds/slot isolation/graph serialization and rejected-write atomicity. It also checks fullscreen geometry, output selection, negative monitor origins and DPI placement, shared technical HUD rows, safe startup commands and actual startup registration/removal in isolated registry keys.
 
 `XWhat.exe --demo --render-preview=C:\absolute\overlay.png` renders the real WPF HUD and settings surface to PNG, then exits. Demo readings are artificial and clearly marked. `XWhat.exe --smoke-test` samples real hardware for five seconds, writes `smoke-results/telemetry.json` beside the executable and exits. A real smoke check confirms acquisition and lifecycle, but cannot establish correctness against reference hardware meters.
 
@@ -15,5 +15,7 @@ Before publishing a GitHub release:
 7. Switch game processes and swap chains; old samples must be cleared. Check Ctrl+Shift+F10, tray settings, click-through, transparent background, and all corners at different DPI scales.
 8. Exit X What. Its PresentMon child/session and its RTSS slot must be gone. Reopen, verify saved settings, then restore a deliberately malformed JSON and verify graceful fallback.
 9. Measure CPU/GPU overhead and working set over a long game session. Fixed history capacity prevents telemetry history growth; measured overhead depends on sensor hardware and drivers.
+10. Enable startup in a permanent portable folder, sign out and back in, and confirm a tray icon without an open settings window. Disable startup and confirm removal of only the XWhat Run entry. When moving folders, apply settings to refresh the registered executable path.
+11. In Auto, switch between a titled window, borderless fullscreen, exclusive D3D, another monitor and our settings window. RTSS should be selected only for fullscreen when available; stopping RTSS should fall back to Windows output with a settings hint. Compare mixed-DPI corners and manually dragged placement.
 
 The current automated environment does not include RTSS or a running exclusive-fullscreen game. That path has protocol tests but still needs the above real-game verification.

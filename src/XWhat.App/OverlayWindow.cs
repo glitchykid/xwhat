@@ -12,6 +12,7 @@ internal sealed class OverlayWindow : Window
 {
     public HudCanvas Hud { get; } = new();
     private MonitorSettings _settings = new();
+    private ScreenBounds? _area;
     public event Action? ToggleRequested;
     public OverlayWindow()
     {
@@ -43,13 +44,15 @@ internal sealed class OverlayWindow : Window
         }
         Position();
     }
-    public void Position()
+    public void Position(ScreenBounds? monitorArea = null)
     {
-        var area = SystemParameters.WorkArea;
-        var width = 320 * _settings.Scale;
-        var height = (_settings.ShowGraphs ? 322 : 252) * _settings.Scale;
-        Left = _settings.Corner is OverlayCorner.TopRight or OverlayCorner.BottomRight ? area.Right - width - 14 : area.Left + 14;
-        Top = _settings.Corner is OverlayCorner.BottomLeft or OverlayCorner.BottomRight ? area.Bottom - height - 14 : area.Top + 14;
+        if (monitorArea.HasValue) _area = monitorArea;
+        var handle = new WindowInteropHelper(this).Handle;
+        if (handle == 0 || !_area.HasValue) return;
+        var position = OverlayPlacement.Calculate(_area.Value, _settings.Corner,
+            _settings.ShowGraphs ? HudRows.Width : HudRows.GraphLeft, HudRows.Height, _settings.Scale, GetDpiForWindow(handle));
+        if (GetWindowRect(handle, out var rectangle) && rectangle.Left == position.X && rectangle.Top == position.Y) return;
+        SetWindowPos(handle, 0, position.X, position.Y, 0, 0, 0x1 | 0x4 | 0x10);
     }
     private nint Hook(nint window, int message, nint wParam, nint lParam, ref bool handled)
     {
@@ -61,4 +64,8 @@ internal sealed class OverlayWindow : Window
     [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW")] private static extern nint SetWindowLongPtr(nint window, int index, nint value);
     [DllImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool RegisterHotKey(nint window, int id, uint modifiers, uint key);
     [DllImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool UnregisterHotKey(nint window, int id);
+    [StructLayout(LayoutKind.Sequential)] private struct NativeRect { public int Left, Top, Right, Bottom; }
+    [DllImport("user32.dll")] private static extern uint GetDpiForWindow(nint window);
+    [DllImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool GetWindowRect(nint window, out NativeRect rectangle);
+    [DllImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool SetWindowPos(nint window, nint insertAfter, int x, int y, int width, int height, uint flags);
 }

@@ -12,6 +12,7 @@
     <RootNamespace>XWhat.App</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="XWhat.App.Tests" />
     <Using Remove="System.Windows.Forms" />
     <Using Remove="System.Drawing" />
     <PackageReference Include="LibreHardwareMonitorLib" Version="0.9.6" />

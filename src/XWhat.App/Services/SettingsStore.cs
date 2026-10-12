@@ -14,7 +14,7 @@ public sealed class SettingsStore
     {
         try
         {
-            return File.Exists(FilePath) ? (JsonSerializer.Deserialize<MonitorSettings>(File.ReadAllText(FilePath)) ?? new()).Normalize() : new();
+            return File.Exists(FilePath) ? MonitorSettings.FromJson(File.ReadAllText(FilePath)) : new();
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
         {

@@ -4,17 +4,19 @@
   <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
   <StackPanel Margin="0,0,0,16">
    <TextBlock Text="X / WHAT" Foreground="#6FE7CF" FontSize="24" FontWeight="SemiBold" />
-   <TextBlock Text="Меньше интерфейса. Больше понимания." Foreground="#A4B3C8" Margin="0,4,0,0" FontSize="12" />
+   <TextBlock Text="Мониторинг · настройки" Foreground="#A4B3C8" Margin="0,4,0,0" FontSize="12" />
   </StackPanel>
   <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
    <StackPanel Margin="0,0,9,12">
     <TextBlock Text="ВЫВОД" Foreground="#6FE7CF" FontSize="10" Margin="0,0,0,6" />
-    <ComboBox x:Name="ModeBox"><ComboBoxItem Content="RTSS · эксклюзивный полный экран" /><ComboBoxItem Content="Окно Windows · без рамки / рабочий стол" /></ComboBox>
+    <ComboBox x:Name="ModeBox"><ComboBoxItem Content="Авто · определять полный экран" /><ComboBoxItem Content="Окно Windows · без рамки / рабочий стол" /><ComboBoxItem Content="RTSS · эксклюзивный полный экран" /></ComboBox>
     <TextBlock Text="Для полного экрана установите и запустите RTSS. Положение, масштаб и обводка этого вывода задаются в RTSS." TextWrapping="Wrap" Foreground="#A4B3C8" FontSize="11" Margin="0,6,0,3" />
     <TextBlock Margin="0,2,0,12"><Hyperlink Click="RtssLink_Click" Foreground="#6FE7CF">Страница загрузки RTSS</Hyperlink></TextBlock>
     <CheckBox x:Name="VisibleBox" Content="Показывать оверлей · Ctrl + Shift + F10" />
     <CheckBox x:Name="GraphsBox" Content="Графики кадров и нагрузки" />
     <CheckBox x:Name="ClickThroughBox" Content="Пропускать клики в игру (окно Windows)" />
+    <CheckBox x:Name="AutostartBox" Content="Запускать при входе в Windows" />
+    <TextBlock Text="Автозапуск работает в фоне, без окна настроек и запроса UAC. Включайте его после перемещения приложения в постоянную папку." TextWrapping="Wrap" Foreground="#A4B3C8" FontSize="11" Margin="0,4,0,0" />
     <TextBlock Text="ИГРА И ДАТЧИКИ" Foreground="#6FE7CF" FontSize="10" Margin="0,16,0,7" />
     <TextBlock Text="Процесс игры (.exe); пусто = активное окно" FontSize="12" Margin="0,0,0,5" />
     <DockPanel><Button Content="Список" DockPanel.Dock="Right" Margin="7,0,0,0" Click="Processes_Click" /><ComboBox x:Name="ProcessBox" IsEditable="True" /></DockPanel>
@@ -37,6 +39,6 @@
     <TextBlock Margin="0,6,0,0"><Hyperlink Click="PawnIoLink_Click" Foreground="#6FE7CF">Официальный PawnIO</Hyperlink></TextBlock>
    </StackPanel>
   </ScrollViewer>
-  <StackPanel Grid.Row="2" Margin="0,12,0,0"><TextBlock x:Name="ErrorText" Foreground="#FF728B" TextWrapping="Wrap" Margin="0,0,0,7" /><DockPanel><Button Content="Применить" Click="Apply_Click" Background="#6FE7CF" Foreground="#101821" /><Button Content="Закрыть" Click="Close_Click" /><TextBlock Text="v0.1.0" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="#72839B" /></DockPanel></StackPanel>
+  <StackPanel Grid.Row="2" Margin="0,12,0,0"><TextBlock x:Name="ErrorText" Foreground="#FF728B" TextWrapping="Wrap" Margin="0,0,0,7" /><DockPanel><Button Content="Применить" Click="Apply_Click" Background="#6FE7CF" Foreground="#101821" /><Button Content="Закрыть" Click="Close_Click" /><TextBlock x:Name="VersionText" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="#72839B" /></DockPanel></StackPanel>
  </Grid>
 </Window>

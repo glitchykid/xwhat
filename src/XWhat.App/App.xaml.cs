@@ -1,7 +1,7 @@
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Windows;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
@@ -21,25 +21,30 @@ public partial class App : Application
     private SettingsWindow? _settingsWindow;
     private Forms.NotifyIcon? _tray;
     private readonly RtssOutput _rtss = new();
+    private readonly ForegroundDisplay _display = new();
+    private readonly AutostartService _startup = new(Path.Combine(AppContext.BaseDirectory, "XWhat.exe"));
     private DispatcherTimer? _timer;
     private Mutex? _instance;
     private bool _demo, _quitting;
     private double _lastRtssTime = -1;
+    private OverlayMode _activeMode = OverlayMode.Desktop;
+    private ScreenBounds? _lastArea;
+    private bool _autostartLaunch;
 
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        _autostartLaunch = e.Args.Contains("--autostart");
         _instance = new Mutex(true, @"Local\XWhat.SingleInstance", out var first);
-        if (!first) { MessageBox.Show("X What уже запущен. Откройте настройки через значок в трее.", "X What"); Shutdown(); return; }
+        if (!first) { if (!_autostartLaunch) MessageBox.Show("X What уже запущен. Откройте настройки через значок в трее.", "X What"); Shutdown(); return; }
         _demo = e.Args.Contains("--demo");
-        _settings = _store.Load();
+        _settings = _store.Load() with { StartWithWindows = _startup.IsEnabled };
         if (_demo) _settings = _settings with { Mode = OverlayMode.Desktop };
         _engine = new(_store, _settings, _demo);
         _overlay = new();
         _overlay.ToggleRequested += ToggleOverlay;
         _overlay.Apply(_settings);
-        _overlay.Show();
-        if (!_settings.ShowOverlay || _settings.Mode == OverlayMode.Rtss) _overlay.Hide();
+        new WindowInteropHelper(_overlay).EnsureHandle();
         CreateTray();
         _engine.Start();
         _timer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(250) };
@@ -48,7 +53,7 @@ public partial class App : Application
         var previewArg = e.Args.FirstOrDefault(a => a.StartsWith("--render-preview=", StringComparison.Ordinal));
         if (previewArg != null) _ = RenderPreviewAsync(previewArg["--render-preview=".Length..]);
         else if (e.Args.Contains("--smoke-test")) _ = SmokeAsync();
-        else if (_settings.Mode == OverlayMode.Rtss || _store.LoadWarning.Length > 0) ShowSettings();
+        else if (!_autostartLaunch && _store.LoadWarning.Length > 0) ShowSettings();
         DispatcherUnhandledException += (_, args) => { _store.Log(args.Exception.ToString()); args.Handled = true; _ = QuitAsync(); };
     }
 
@@ -79,18 +84,25 @@ public partial class App : Application
         _settingsWindow.Show();
     }
 
-    private void ApplySettings(MonitorSettings settings)
+    private void ApplySettings(MonitorSettings settings) => SaveAndApply(settings, configureStartup: true);
+    private void SaveAndApply(MonitorSettings settings, bool configureStartup)
     {
         _store.Save(settings);
-        var oldMode = _settings.Mode;
+        try { if (configureStartup) _startup.SetEnabled(settings.StartWithWindows); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException or ArgumentException)
+        {
+            try { _store.Save(_settings); }
+            catch (Exception rollbackError) when (rollbackError is IOException or UnauthorizedAccessException) { _store.Log($"Settings rollback: {rollbackError.Message}"); }
+            throw;
+        }
         _settings = settings;
+        _lastArea = null;
         _engine?.Configure(settings);
         _overlay?.Apply(settings);
-        if (oldMode == OverlayMode.Rtss && settings.Mode != oldMode) _rtss.Clear();
         if (!_settings.ShowOverlay) _rtss.Clear();
         Refresh();
     }
-    private void ToggleOverlay() => ApplySettings(_settings with { ShowOverlay = !_settings.ShowOverlay });
+    private void ToggleOverlay() => SaveAndApply(_settings with { ShowOverlay = !_settings.ShowOverlay }, configureStartup: false);
 
     private void Refresh()
     {
@@ -98,51 +110,42 @@ public partial class App : Application
         var hardware = _engine.Latest;
         var frames = _engine.Frames();
         var histories = _engine.Histories.Select(h => h.Read(hardware?.Time ?? 0, _settings.HistorySeconds)).ToArray();
-        _overlay.Hud.Update(hardware, frames, histories, _settings, _engine.TargetName, _demo);
-        if (_settings.ShowOverlay && _settings.Mode == OverlayMode.Desktop) { if (!_overlay.IsVisible) _overlay.Show(); }
-        else if (_overlay.IsVisible) _overlay.Hide();
-        if (_settings.ShowOverlay && _settings.Mode == OverlayMode.Rtss && hardware != null && hardware.Time != _lastRtssTime)
+        var display = _display.Read();
+        var mode = OverlayRouting.Resolve(_settings.Mode, display.IsFullscreen, _settings.Mode == OverlayMode.Auto && display.IsFullscreen && _rtss.IsAvailable);
+        if (_activeMode != mode)
         {
-            UpdateRtss(hardware, frames, histories);
+            if (_activeMode == OverlayMode.Rtss) _rtss.Clear();
+            _activeMode = mode; _lastRtssTime = -1; _lastArea = null;
+        }
+        var rows = HudRows.Build(hardware, frames, histories);
+        _overlay.Hud.Update(rows, _settings, hardware?.Time ?? 0, _demo);
+        if (_settings.ShowOverlay && mode == OverlayMode.Desktop)
+        {
+            if (!_overlay.IsVisible) _overlay.Show();
+            if (_settings.ClickThrough || _lastArea != display.Area) _overlay.Position(display.Area);
+            _lastArea = display.Area;
+        }
+        else if (_overlay.IsVisible) _overlay.Hide();
+        if (_settings.ShowOverlay && mode == OverlayMode.Rtss && hardware != null && hardware.Time != _lastRtssTime)
+        {
+            UpdateRtss(rows, hardware.Time);
             _lastRtssTime = hardware.Time;
         }
         if (_settingsWindow != null)
         {
             _settingsWindow.UpdateDevices(_engine.Gpus, _engine.Disks);
-            _settingsWindow.StatusText.Text = $"{_engine.CaptureStatus}\n{(_settings.Mode == OverlayMode.Rtss ? _rtss.Status : "Оверлей Windows")}\nCPU: {hardware?.CpuName ?? "обнаружение"}\nGPU: {hardware?.GpuName ?? "обнаружение"}\n{hardware?.Status}";
+            var route = mode == OverlayMode.Rtss ? _rtss.Status : display.IsFullscreen && _settings.Mode == OverlayMode.Auto ? "Полный экран · окно Windows; для эксклюзивного режима запустите RTSS" : "Оверлей Windows";
+            _settingsWindow.StatusText.Text = $"{_engine.CaptureStatus}\n{route}\nЭкран: {(display.ExclusiveD3d ? "D3D exclusive" : display.IsFullscreen ? "полноэкранное окно" : "оконный")}\nCPU: {hardware?.CpuName ?? "обнаружение"}\nGPU: {hardware?.GpuName ?? "обнаружение"}\n{hardware?.Status}\n{_store.LoadWarning}";
         }
         if (_tray != null) _tray.Text = ("X What · " + _engine.TargetName)[..Math.Min(63, ("X What · " + _engine.TargetName).Length)];
     }
 
-    private void UpdateRtss(HardwareSample hardware, FrameSnapshot frames, SamplePoint[][] histories)
+    private void UpdateRtss(HudRow[] rows, double time)
     {
-        static string N(double? v, string f = "0") => HudCanvas.Number(v, f).Replace("—", "--");
-        var metrics = new[] { hardware.Cpu, hardware.Gpu, hardware.Ram, hardware.Vram, hardware.Disk };
-        var colors = new[] { "6FE7CF", "86B8FF", "C7A0FF", "FFD27C", "FF728B" };
-        var names = new[] { "CPU", "GPU", "RAM", "VRAM", "DISK" };
-        var graphs = new List<RtssGraph>();
-        var lines = new List<string>
-        {
-            "<C=6FE7CF>X / WHAT<C>",
-            $"<C=FFFFFF>{N(frames.Fps)} FPS<C>   1% {N(frames.OnePercentLow)}   {N(frames.LatestMs, "0.0")} ms"
-        };
-        if (_settings.ShowGraphs)
-        {
-            lines.Add($"FRAME {_settings.HistorySeconds}s  MAX {N(frames.MaximumMs, "0.0")} ms  SPIKES {frames.StutterCount}");
-            lines.Add("<C=6FE7CF>{graph0}<C>");
-            graphs.Add(new(Buckets(frames.Samples, frames.Samples.LastOrDefault().Time, _settings.HistorySeconds, 296), 0,
-                (float)Math.Max(50, (frames.MaximumMs ?? 0) * 1.15), 296, 45));
-        }
-        for (var i = 0; i < 5; i++)
-        {
-            var metric = metrics[i];
-            var detail = i is 2 or 3 ? $"{N(metric.UsedGiB, "0.0")}/{N(metric.TotalGiB, "0.#")} GiB" + (metric.Temperature.HasValue ? $" {N(metric.Temperature)} C" : "") : $"{N(metric.Load)}%  {N(metric.Temperature)} C";
-            var graphTag = _settings.ShowGraphs ? " {graph" + graphs.Count.ToString(CultureInfo.InvariantCulture) + "}" : "";
-            lines.Add($"<C={colors[i]}>{names[i],-4}<C>  {detail} <C={colors[i]}>{graphTag}<C>");
-            if (_settings.ShowGraphs) graphs.Add(new(Buckets(histories[i], hardware.Time, _settings.HistorySeconds, 93), 0, 100, 93, 14));
-        }
-        lines.Add($"R {N(hardware.DiskReadMiBs, "0.#")} W {N(hardware.DiskWriteMiBs, "0.#")} MiB/s  I/O {N(hardware.DiskLatencyMs, "0.0")} ms");
-        _rtss.Update(string.Join('\n', lines), graphs.ToArray());
+        var graphs = _settings.ShowGraphs ? rows.Take(7).Select((row, index) => new RtssGraph(
+            Buckets(row.Graph, index < 2 ? row.Graph.LastOrDefault().Time : time, _settings.HistorySeconds, HudRows.GraphWidth),
+            0, (float)row.Maximum, HudRows.GraphWidth, 14)).ToArray() : [];
+        _rtss.Update(HudRows.RtssText(rows, _settings.ShowGraphs, _demo), graphs);
     }
 
     private static float[] Buckets(SamplePoint[] samples, double now, double seconds, int width)
@@ -163,7 +166,7 @@ public partial class App : Application
     }
     private static void SavePng(FrameworkElement element, string path)
     {
-        element.Measure(new Size(element.ActualWidth > 0 ? element.ActualWidth : 320, element.ActualHeight > 0 ? element.ActualHeight : 322));
+        element.Measure(new Size(element.ActualWidth > 0 ? element.ActualWidth : HudRows.Width, element.ActualHeight > 0 ? element.ActualHeight : HudRows.Height));
         element.Arrange(new Rect(new Size(element.DesiredSize.Width, element.DesiredSize.Height)));
         var bitmap = new RenderTargetBitmap((int)Math.Ceiling(element.ActualWidth), (int)Math.Ceiling(element.ActualHeight), 96, 96, PixelFormats.Pbgra32);
         bitmap.Render(element);
@@ -177,7 +180,8 @@ public partial class App : Application
         var directory = Path.Combine(AppContext.BaseDirectory, "smoke-results");
         Directory.CreateDirectory(directory);
         File.WriteAllText(Path.Combine(directory, "telemetry.json"), System.Text.Json.JsonSerializer.Serialize(new
-        { Sample = sample, CaptureStatus = _engine?.CaptureStatus, Frames = _engine?.Frames(), RtssStatus = _rtss.Status, Hotkey = _overlay?.HotkeyAvailable }));
+        { Sample = sample, CaptureStatus = _engine?.CaptureStatus, Frames = _engine?.Frames(), RtssStatus = _rtss.Status, Hotkey = _overlay?.HotkeyAvailable,
+            Display = _display.Read(), ActiveOutput = _activeMode.ToString(), AutostartLaunch = _autostartLaunch, SettingsVisible = _settingsWindow?.IsVisible == true }));
         await QuitAsync();
     }
     private async Task QuitAsync()

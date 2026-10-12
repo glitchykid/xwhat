@@ -14,7 +14,9 @@ public partial class SettingsWindow : Window
     {
         InitializeComponent();
         _settings = settings; _apply = apply;
-        ModeBox.SelectedIndex = settings.Mode == OverlayMode.Rtss ? 0 : 1;
+        ModeBox.SelectedIndex = settings.Mode switch { OverlayMode.Auto => 0, OverlayMode.Desktop => 1, _ => 2 };
+        VersionText.Text = "v" + typeof(App).Assembly.GetName().Version?.ToString(3);
+        AutostartBox.IsChecked = settings.StartWithWindows;
         CornerBox.SelectedIndex = (int)settings.Corner;
         VisibleBox.IsChecked = settings.ShowOverlay; GraphsBox.IsChecked = settings.ShowGraphs; ClickThroughBox.IsChecked = settings.ClickThrough;
         ScaleSlider.Value = settings.Scale; OpacitySlider.Value = settings.BackgroundOpacity;
@@ -33,14 +35,15 @@ public partial class SettingsWindow : Window
         { ErrorText.Text = "Укажите порог от 16 до 200 ms."; return; }
         var updated = (_settings with
         {
-            Mode = ModeBox.SelectedIndex == 0 ? OverlayMode.Rtss : OverlayMode.Desktop, Corner = (OverlayCorner)Math.Max(0, CornerBox.SelectedIndex),
+            Mode = ModeBox.SelectedIndex switch { 0 => OverlayMode.Auto, 1 => OverlayMode.Desktop, _ => OverlayMode.Rtss }, Corner = (OverlayCorner)Math.Max(0, CornerBox.SelectedIndex),
+            StartWithWindows = AutostartBox.IsChecked == true,
             ShowOverlay = VisibleBox.IsChecked == true, ShowGraphs = GraphsBox.IsChecked == true, ClickThrough = ClickThroughBox.IsChecked == true,
             Scale = ScaleSlider.Value, BackgroundOpacity = OpacitySlider.Value, ProcessName = ProcessBox.Text,
             GpuId = GpuBox.SelectedValue as string ?? "", DiskId = DiskBox.SelectedValue as string ?? "",
             SampleIntervalMs = IntervalBox.SelectedItem as int? ?? 500, HistorySeconds = HistoryBox.SelectedItem as int? ?? 10, StutterThresholdMs = threshold
         }).Normalize();
         try { _apply(updated); _settings = updated; ErrorText.Text = "Сохранено"; }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { ErrorText.Text = $"Настройки не сохранены: {ex.Message}"; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException or ArgumentException) { ErrorText.Text = $"Настройки не сохранены: {ex.Message}"; }
     }
     private void Processes_Click(object sender, RoutedEventArgs e)
     {
