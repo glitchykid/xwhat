@@ -35,9 +35,11 @@ public static class HudRows
         return rows.ToArray();
     }
 
-    public static string RtssText(HudRow[] rows, bool showGraphs, bool demo = false)
+    /// <summary>RTSS percentage sizing for normalized settings; restores the default size after our rows.</summary>
+    public static string RtssText(HudRow[] rows, bool showGraphs, bool demo = false, double scale = 1)
     {
         var text = new StringBuilder("<FNT=Consolas,-9,400,1>");
+        text.Append(CultureInfo.InvariantCulture, $"<S={ScalePixels(100, scale)}>");
         var graph = 0;
         for (var i = 0; i < rows.Length; i++)
         {
@@ -47,7 +49,20 @@ public static class HudRows
             if (showGraphs && i < 7) text.Append(CultureInfo.InvariantCulture, $"<C=78B8CA>{{graph{graph++}}}<C>");
             if (demo && i == rows.Length - 1) text.Append(" DEMO");
         }
-        return text.ToString();
+        return text.Append("<S>").ToString();
     }
+
+    /// <summary>Normalized settings. Positive SDK object dimensions are pixels, so scale them separately from the text.</summary>
+    public static RtssGraph[] RtssGraphs(HudRow[] rows, MonitorSettings settings, double time)
+    {
+        var width = ScalePixels(GraphWidth, settings.Scale);
+        var height = ScalePixels(14, settings.Scale);
+        return settings.ShowGraphs ? rows.Take(7).Select((row, index) => new RtssGraph(
+            GraphEnvelope.Create(row.Graph, index < 2 ? row.Graph.LastOrDefault().Time : time, settings.HistorySeconds, width)
+                .Maximum.Select(value => double.IsFinite(value) ? (float)value : 0).ToArray(),
+            0, (float)row.Maximum, width, height)).ToArray() : [];
+    }
+
+    private static int ScalePixels(int pixels, double scale) => (int)Math.Round(pixels * scale, MidpointRounding.AwayFromZero);
     public static string Number(double? value, string format = "0") => value.HasValue && double.IsFinite(value.Value) ? value.Value.ToString(format, CultureInfo.InvariantCulture) : "—";
 }

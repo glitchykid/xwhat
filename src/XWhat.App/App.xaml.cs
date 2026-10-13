@@ -114,6 +114,8 @@ public partial class App : Application
         }
         _settings = settings;
         _lastArea = null;
+        // Settings must reach RTSS even when no new hardware sample has arrived yet.
+        _lastRtssTime = -1;
         _engine?.Configure(settings);
         if (_settings.Mode != OverlayMode.Desktop) _rtssHost?.Start();
         _overlay?.Apply(settings);
@@ -179,14 +181,8 @@ public partial class App : Application
 
     private void UpdateRtss(HudRow[] rows, double time)
     {
-        var graphs = _settings.ShowGraphs ? rows.Take(7).Select((row, index) => new RtssGraph(
-            Buckets(row.Graph, index < 2 ? row.Graph.LastOrDefault().Time : time, _settings.HistorySeconds, HudRows.GraphWidth),
-            0, (float)row.Maximum, HudRows.GraphWidth, 14)).ToArray() : [];
-        _rtss.Update(HudRows.RtssText(rows, _settings.ShowGraphs, _demo), graphs);
+        _rtss.Update(HudRows.RtssText(rows, _settings.ShowGraphs, _demo, _settings.Scale), HudRows.RtssGraphs(rows, _settings, time));
     }
-
-    private static float[] Buckets(SamplePoint[] samples, double now, double seconds, int width)
-        => GraphEnvelope.Create(samples, now, seconds, width).Maximum.Select(value => double.IsFinite(value) ? (float)value : 0).ToArray();
 
     private async Task RenderPreviewAsync(string path)
     {

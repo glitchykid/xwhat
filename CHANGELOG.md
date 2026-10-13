@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.1 — 2026-10-13
+
+- Apply X What's 75–200% size setting to both RTSS numeric text and all seven embedded graphs, including text-only output.
+- Refresh RTSS immediately after Apply, even when the hardware sample has not changed. Preserve frame spikes while adjusting graph resolution to the scaled width.
+- Update settings help and accessibility text to describe the shared Windows/RTSS size control. RTSS position and background remain controlled by RTSS.
+- Regression tests cover fractional scales, pixel rounding, peak retention, text-only output, culture-independent tags and saving scale in RTSS mode.
+
 ## 0.3.0 — 2026-10-13
 
 - Windows x64 Setup.exe installs X What and automatically downloads missing RTSS 7.3.7 and signed PawnIO 2.2.0 from their official distribution endpoints, with pinned SHA-256 verification.

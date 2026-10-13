@@ -31,6 +31,10 @@ public sealed class SettingsWindowTests
                 editor.Text = "game.exe";
                 Assert.Equal("game.exe", process.Text);
                 var threshold = (TextBox)window.FindName("ThresholdBox");
+                var mode = (ComboBox)window.FindName("ModeBox");
+                var scale = (Slider)window.FindName("ScaleSlider");
+                mode.SelectedIndex = 2;
+                scale.Value = 0.75;
                 var apply = (Button)window.FindName("ApplyButton");
                 threshold.Text = "NaN";
                 apply.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
@@ -40,6 +44,8 @@ public sealed class SettingsWindowTests
                 Assert.NotNull(saved);
                 Assert.Equal("game.exe", saved.ProcessName);
                 Assert.Equal(40.5, saved.StutterThresholdMs);
+                Assert.Equal(OverlayMode.Rtss, saved.Mode);
+                Assert.Equal(0.75, saved.Scale);
             }
             finally { window.Close(); application.Shutdown(); }
         });
