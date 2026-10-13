@@ -25,6 +25,9 @@ public partial class App : Application
     private readonly RtssOutput _rtss = new();
     private readonly ForegroundDisplay _display = new();
     private readonly AutostartService _startup = new(Path.Combine(AppContext.BaseDirectory, "XWhat.exe"));
+    private RtssHost? _rtssHost;
+    private readonly bool _frameAccess = InstalledLaunch.FrameAccess;
+    private bool _prerequisiteNotified;
     private DispatcherTimer? _timer;
     private Mutex? _instance;
     private bool _demo, _quitting;
@@ -36,11 +39,25 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
-        _autostartLaunch = e.Args.Contains("--autostart");
+        if (e.Args.Contains("--install-tasks") || e.Args.Contains("--uninstall-tasks"))
+        {
+            try
+            {
+                if (e.Args.Contains("--install-tasks")) Shutdown(InstalledLaunch.Configure());
+                else { InstalledLaunch.Remove(); Shutdown(); }
+            }
+            catch (Exception ex) { _store.Log($"Installation: {ex}"); Shutdown(1); }
+            return;
+        }
+        if (!e.Args.Contains("--task-launch") && !e.Args.Contains("--demo") && !e.Args.Contains("--smoke-test") && InstalledLaunch.TryLaunch(_store))
+        { Shutdown(); return; }
+        _autostartLaunch = e.Args.Contains("--autostart") || e.Args.Contains("--task-launch");
         _instance = new Mutex(true, @"Local\XWhat.SingleInstance", out var first);
         if (!first) { if (!_autostartLaunch) MessageBox.Show("X What уже запущен. Откройте настройки через значок в трее.", "X What"); Shutdown(); return; }
         _demo = e.Args.Contains("--demo");
         _settings = _store.Load() with { StartWithWindows = _startup.IsEnabled };
+        _rtssHost = new(_store);
+        if (!_demo && _settings.Mode != OverlayMode.Desktop) _rtssHost.Start();
         if (_demo) _settings = _settings with { Mode = OverlayMode.Desktop };
         _engine = new(_store, _settings, _demo);
         _overlay = new();
@@ -81,6 +98,7 @@ public partial class App : Application
         _settingsWindow = new(_settings, _engine?.Gpus ?? [], _engine?.Disks ?? [], status, ApplySettings);
         _settingsWindow.Closed += (_, _) => _settingsWindow = null;
         _settingsWindow.Show();
+        UpdateReadiness(_display.Read());
     }
 
     private void ApplySettings(MonitorSettings settings) => SaveAndApply(settings, configureStartup: true);
@@ -97,6 +115,7 @@ public partial class App : Application
         _settings = settings;
         _lastArea = null;
         _engine?.Configure(settings);
+        if (_settings.Mode != OverlayMode.Desktop) _rtssHost?.Start();
         _overlay?.Apply(settings);
         if (!_settings.ShowOverlay) _rtss.Clear();
         Refresh();
@@ -137,6 +156,25 @@ public partial class App : Application
             _settingsWindow.StatusText.Text = $"{_engine.CaptureStatus}\n{route}\nЭкран: {(display.ExclusiveD3d ? "D3D exclusive" : display.IsFullscreen ? "полноэкранное окно" : "оконный")}\nCPU: {hardware?.CpuName ?? "обнаружение"}\nGPU: {hardware?.GpuName ?? "обнаружение"}\n{hardware?.Status}\n{_store.LoadWarning}";
         }
         if (_tray != null) _tray.Text = ("X What · " + _engine.TargetName)[..Math.Min(63, ("X What · " + _engine.TargetName).Length)];
+        UpdateReadiness(display);
+    }
+
+    private void UpdateReadiness(DisplayState display)
+    {
+        if (_demo) return;
+        var ready = MonitoringReadiness.Check(_settings.Mode, display.IsFullscreen, _rtssHost?.IsInstalled == true, _rtss.IsAvailable, _frameAccess);
+        var message = ready.MissingRtss ? "Нужен RTSS · запустите установщик X What" :
+            ready.WaitingRtss ? "RTSS не подключён · проверьте диагностику" : ready.MissingFrameAccess ? "Нет доступа к FPS · запустите установщик X What" : "";
+        if (_settingsWindow != null)
+        {
+            _settingsWindow.SetReadiness(ready, message);
+            if (_rtssHost?.StartError.Length > 0) _settingsWindow.StatusText.Text += "\n" + _rtssHost.StartError;
+        }
+        if (!_prerequisiteNotified && message.Length > 0 && _tray != null)
+        {
+            _prerequisiteNotified = true;
+            _tray.ShowBalloonTip(7000, "X What · требуется настройка", message + ". Откройте настройки из трея.", Forms.ToolTipIcon.Warning);
+        }
     }
 
     private void UpdateRtss(HudRow[] rows, double time)
@@ -188,7 +226,8 @@ public partial class App : Application
         Directory.CreateDirectory(directory);
         File.WriteAllText(Path.Combine(directory, "telemetry.json"), System.Text.Json.JsonSerializer.Serialize(new
         { Sample = sample, CaptureStatus = _engine?.CaptureStatus, Frames = _engine?.Frames(), RtssStatus = _rtss.Status, Hotkey = _overlay?.HotkeyAvailable,
-            Display = _display.Read(), ActiveOutput = _activeMode.ToString(), AutostartLaunch = _autostartLaunch, SettingsVisible = _settingsWindow?.IsVisible == true }));
+            Display = _display.Read(), ActiveOutput = _activeMode.ToString(), AutostartLaunch = _autostartLaunch, SettingsVisible = _settingsWindow?.IsVisible == true,
+            FrameAccess = _frameAccess, RtssInstalled = _rtssHost?.IsInstalled == true }));
         await QuitAsync();
     }
     private async Task QuitAsync()

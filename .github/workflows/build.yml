@@ -35,6 +35,7 @@ jobs:
           name: windows-release
           path: |
             artifacts/release/*.zip
+            artifacts/release/*-Setup-win-x64.exe
             artifacts/release/*.sha256
           if-no-files-found: error
 

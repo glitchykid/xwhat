@@ -1,0 +1,5 @@
+#define RtssUrl "https://ftp.nluug.nl/pub/games/PC/guru3d/afterburner/%5BGuru3D%5D-RTSSSetup737Build28314.zip"
+#define RtssArchiveHash "9b084a8cb3e53ec1a673894d0b66e22b16c9fd8785636b020b2d422f3f2a820e"
+#define RtssSetupHash "04f4704ced86a68b650bf87156c02e69160e6c049b576661250250beeabaa5ef"
+#define PawnUrl "https://github.com/namazso/PawnIO.Setup/releases/download/2.2.0/PawnIO_setup.exe"
+#define PawnHash "1f519a22e47187f70a1379a48ca604981c4fcf694f4e65b734aaa74a9fba3032"

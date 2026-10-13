@@ -4,6 +4,8 @@ Automated: `scripts/Build.ps1` exercises history bounds, frame statistics/expiry
 
 Windows UI tests also exercise the styled editable process field, invalid/valid frame threshold, tray actions and accessible overlay state, and menu item bounds to prevent a clipped Exit action.
 
+Installation tests inspect the fixed executable/argument/principal and read/execute-only user ACL, reject unsafe paths and altered actions, and invoke Task Scheduler's TASK_VALIDATE_ONLY mode without registering a task. Prerequisite routing and RTSS hexadecimal object addresses are regression tested. These tests never grant group membership or install a driver.
+
 `XWhat.exe --demo --render-preview=C:\absolute\overlay.png` renders the real WPF HUD, settings surface (`overlay.settings.png`) and native tray menu (`overlay.tray.png`), then exits. Demo readings are artificial and clearly marked. `XWhat.exe --smoke-test` samples real hardware for five seconds, writes `smoke-results/telemetry.json` beside the executable and exits. A real smoke check confirms acquisition and lifecycle, but cannot establish correctness against reference hardware meters.
 
 Before publishing a GitHub release:
@@ -20,5 +22,7 @@ Before publishing a GitHub release:
 10. Enable startup in a permanent portable folder, sign out and back in, and confirm a tray icon without an open settings window. Disable startup and confirm removal of only the XWhat Run entry. When moving folders, apply settings to refresh the registered executable path.
 11. In Auto, switch between a titled window, borderless fullscreen, exclusive D3D, another monitor and our settings window. RTSS should be selected only for fullscreen when available; stopping RTSS should fall back to Windows output with a settings hint. Compare mixed-DPI corners and manually dragged placement.
 12. Open the tray menu and settings at 100%, 150% and 200% DPI. Check all actions, process editing/list selection, dropdown keyboard navigation, sliders, Enter to apply, Escape to close, and expanded diagnostics scrolling. Confirm no clipped controls or large empty image gutter in the menu.
+13. Run Setup.exe on a clean Windows x64 machine with recommended components. Confirm verified official downloads, signed PawnIO installation, RTSS startup and a working per-user launch task. Test denied/cancelled UAC, no internet/hash mismatch, existing RTSS/PawnIO, alternate administrator credentials and a standard account after token refresh. Uninstall must remove the X What task while retaining shared components.
+14. In Dragon Age: Inquisition, launch X What, restart the game in fullscreen, and confirm RTSS text plus all seven graphs. Compare the shader/OSD state with another RTSS client. A successful installation or shared-memory write alone does not prove an in-game visible overlay.
 
 The current automated environment does not include RTSS or a running exclusive-fullscreen game. That path has protocol tests but still needs the above real-game verification.

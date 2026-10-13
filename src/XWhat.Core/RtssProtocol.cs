@@ -22,7 +22,8 @@ public static class RtssProtocol
         var graphOffset = 0;
         for (var i = 0; i < graphs.Length; i++)
         {
-            rendered.Replace($"{{graph{i}}}", $"<OBJ={graphOffset}>");
+            // RTSS hypertext interprets object addresses as hexadecimal byte offsets.
+            rendered.Replace($"{{graph{i}}}", $"<OBJ={graphOffset:X8}>");
             graphOffset += 36 + graphs[i].Values.Length * 4;
         }
         if (Encoding.ASCII.GetByteCount(rendered.ToString()) > 4095) return false;

@@ -23,6 +23,7 @@ try {
     Compress-Archive -Path $package -DestinationPath $archive -CompressionLevel Optimal -Force
     $hash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
     "$hash  XWhat-$version-win-x64.zip" | Set-Content -LiteralPath "$archive.sha256" -Encoding ascii
+    & "$PSScriptRoot/Build-Installer.ps1" -PackagePath $package
     Write-Output "Release executable: $package\XWhat.exe"
     Write-Output "Release archive: $archive"
 } finally { Pop-Location }

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0 — 2026-10-13
+
+- Windows x64 Setup.exe installs X What and automatically downloads missing RTSS 7.3.7 and signed PawnIO 2.2.0 from their official distribution endpoints, with pinned SHA-256 verification.
+- Installer configures frame capture access and a protected, on-demand Windows task for sensor/ETW privileges. The installed application uses it without a repeated UAC prompt; no password is stored.
+- RTSS starts with X What. Existing third-party installations and their profiles are retained.
+- Missing RTSS or frame access is visible in settings and a one-time tray notification, with an installer link.
+- Fix RTSS embedded graph addresses to use hexadecimal offsets as required by the vendor SDK; use a compact Consolas font through RTSS 7.3.7's font tag.
+- Additional tests cover prerequisites, task action/ACL restrictions, native task XML validation without registration, and multiple graph references.
+- Releases include Setup.exe, portable ZIP and SHA-256 for both.
+
 ## 0.2.1 — 2026-10-12
 
 - Minimal technical tray menu with short actions, current overlay state and a monochrome telemetry icon.

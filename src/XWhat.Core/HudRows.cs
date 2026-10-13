@@ -37,7 +37,7 @@ public static class HudRows
 
     public static string RtssText(HudRow[] rows, bool showGraphs, bool demo = false)
     {
-        var text = new StringBuilder();
+        var text = new StringBuilder("<FNT=Consolas,-9,400,1>");
         var graph = 0;
         for (var i = 0; i < rows.Length; i++)
         {

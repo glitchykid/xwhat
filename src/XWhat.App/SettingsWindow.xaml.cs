@@ -10,6 +10,7 @@ public partial class SettingsWindow : Window
 {
     private readonly Action<MonitorSettings> _apply;
     private MonitorSettings _settings;
+    private bool _readinessShown;
     public SettingsWindow(MonitorSettings settings, DeviceChoice[] gpus, DeviceChoice[] disks, string status, Action<MonitorSettings> apply)
     {
         InitializeComponent();
@@ -66,6 +67,18 @@ public partial class SettingsWindow : Window
         UpdateChoices(DiskBox, disks, "Все диски");
     }
     private void UpdateSummary() => SummaryText.Text = $"{(_settings.Mode == OverlayMode.Auto ? "Авто" : _settings.Mode == OverlayMode.Rtss ? "RTSS" : "Windows")} · {_settings.SampleIntervalMs} ms";
+    public void SetReadiness(MonitoringReadiness readiness, string message)
+    {
+        if (readiness.Ready)
+        {
+            if (SummaryText.ToolTip != null) { SummaryText.ToolTip = null; SummaryText.Foreground = (System.Windows.Media.Brush)FindResource("Muted"); UpdateSummary(); }
+            return;
+        }
+        SummaryText.Text = readiness.MissingRtss ? "Нужен RTSS" : readiness.WaitingRtss ? "RTSS: ожидание" : "FPS: нет доступа";
+        SummaryText.Foreground = System.Windows.Media.Brushes.LightSalmon;
+        SummaryText.ToolTip = message;
+        if (!_readinessShown) { DiagnosticsPanel.IsExpanded = true; _readinessShown = true; }
+    }
     private static void UpdateChoices(System.Windows.Controls.ComboBox box, DeviceChoice[] choices, string defaultName)
     {
         var items = new[] { new DeviceChoice("", defaultName) }.Concat(choices).ToArray();
@@ -76,6 +89,7 @@ public partial class SettingsWindow : Window
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
     private void RtssLink_Click(object sender, RoutedEventArgs e) => OpenLink("https://www.guru3d.com/download/rtss-rivatuner-statistics-server-download/");
     private void PawnIoLink_Click(object sender, RoutedEventArgs e) => OpenLink("https://pawnio.eu/");
+    private void SetupLink_Click(object sender, RoutedEventArgs e) => OpenLink("https://github.com/glitchykid/xwhat/releases/tag/v" + typeof(App).Assembly.GetName().Version?.ToString(3));
     private void OpenLink(string url)
     {
         try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); }
